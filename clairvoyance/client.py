@@ -1,5 +1,6 @@
 import asyncio
 from typing import Dict, Optional
+import time
 
 import aiohttp
 
@@ -20,7 +21,7 @@ class Client(IClient):
         self._session = None
 
         self._headers = headers or {}
-        self._max_retries = max_retries or 3
+        self._max_retries = max_retries or 30
         self._semaphore = asyncio.Semaphore(concurrent_requests or 50)
 
         client_ctx.set(self)
@@ -32,7 +33,10 @@ class Client(IClient):
     ) -> Dict:
         """Post a GraphQL document to the server and return the response as JSON."""
 
+        time.sleep(0.5)
+        
         if retries >= self._max_retries:
+            log().warning(f'Reached max retries: {retries}')
             return {}
 
         async with self._semaphore:
@@ -60,6 +64,9 @@ class Client(IClient):
             ) as e:
                 log().warning(f'Error posting to {self._url}: {e}')
 
+        time.sleep(1 + (10 * retries))
+        if (retries > 10): time.sleep(60*retries)
+        
         return await self.post(document, retries + 1)
 
     async def close(self) -> None:

@@ -1,5 +1,6 @@
 # pylint: disable=anomalous-backslash-in-string, line-too-long
-
+import pickle
+import os
 import asyncio
 import re
 import time
@@ -295,7 +296,7 @@ def get_typeref(
             non_null=non_null,
         )
 
-    log().debug(f'Unknown error message for `typeref`: \'{error_message}\'')
+    log().debug(f'Unknown error message for `typeref`: \'{error_message}\' in a context: \'{context}\'\nMatch is \'{match}\'')
     return None
 
 
@@ -464,6 +465,14 @@ async def explore_field(
             field.args.append(arg)
             args.append(arg)
 
+    log().debug(f'!!!!!!!!!!!!! FINIEHSED EXPLORING FIELD: {field} !!!!!!!!!!!!!!')
+    log().debug(f'{args}')
+    serialized_field = pickle.dumps(field)
+    os.makedirs(f'backup/fields', exist_ok=True)
+    os.makedirs(f'backup/fields/{input_document}', exist_ok=True)
+    with open(f'backup/fields/{input_document}/{field_name}---{typename}.pickle', 'wb') as f:
+        f.write(serialized_field)
+
     return field, args
 
 
@@ -472,8 +481,15 @@ async def clairvoyance(
     input_document: str,
     input_schema: Dict[str, Any] = None,
 ) -> str:
+    os.makedirs(f'backup', exist_ok=True)
     if not input_schema:
         root_typenames = await fetch_root_typenames()
+        serialized_root_typenames = pickle.dumps(root_typenames)
+        with open(f'backup/root_typenames_{input_document}.pickle', 'wb') as f:
+            f.write(serialized_root_typenames)
+        log().debug(f'!!!!!!!!!!!!! GOT ROOT_TYPENAMES FOR {input_document} !!!!!!!!!!!!!!')
+        log().debug(f'{root_typenames}')
+
         schema = graphql.Schema(
             query_type=root_typenames['queryType'],
             mutation_type=root_typenames['mutationType'],
@@ -483,12 +499,24 @@ async def clairvoyance(
         schema = graphql.Schema(schema=input_schema)
 
     typename = await probe_typename(input_document)
+    serialized_typename = pickle.dumps(typename)
+    with open(f'backup/typename_{input_document}.pickle', 'wb') as f:
+        f.write(serialized_typename)
+    log().debug(f'!!!!!!!!!!!!! GOT TYPENAME FOR {input_document} !!!!!!!!!!!!!!')
+    log().debug(f'{typename}')
+
     log().debug(f'__typename = {typename}')
 
     valid_fields = await probe_valid_fields(
         wordlist,
         input_document,
     )
+    serialized_valid_fields = pickle.dumps(valid_fields)
+    with open(f'backup/valid_fields_{input_document}.pickle', 'wb') as f:
+        f.write(serialized_valid_fields)
+    log().debug(f'!!!!!!!!!!!!! GOT VALID_FIELDS FOR {input_document} !!!!!!!!!!!!!!')
+    log().debug(f'{valid_fields}')
+
     log().debug(f'{typename}.fields = {valid_fields}')
 
     tasks: List[asyncio.Task] = []
@@ -501,10 +529,18 @@ async def clairvoyance(
         )))
 
     results = await asyncio.gather(*tasks)
+    serialized_results = pickle.dumps(results)
+    with open(f'backup/results_{input_document}.pickle', 'wb') as f:
+        f.write(serialized_results)
+    log().debug(f'!!!!!!!!!!!!! GOT RESULTS FOR {input_document} !!!!!!!!!!!!!!')
+    log().debug(f'{results}')
+
     for (field, args) in results:
         for arg in args:
             schema.add_type(arg.type.name, 'INPUT_OBJECT')
         schema.types[typename].fields.append(field)
         schema.add_type(field.type.name, 'OBJECT')
 
+    log().debug(f'!!!!!!!!!!!!! GOT SCHEMA !!!!!!!!!!!!!!')
+    log().debug(f'{schema}')
     return repr(schema)
