@@ -465,7 +465,7 @@ async def explore_field(
             field.args.append(arg)
             args.append(arg)
 
-    log().debug(f'!!!!!!!!!!!!! FINIEHSED EXPLORING FIELD: {field} !!!!!!!!!!!!!!')
+    log().debug(f'!!!!!!!!!!!!! FINIEHSED EXPLORING FIELD: {field_name}---{typename} in {input_document} !!!!!!!!!!!!!!')
     log().debug(f'{args}')
     serialized_field = pickle.dumps(field)
     os.makedirs(f'backup/fields', exist_ok=True)
