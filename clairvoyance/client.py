@@ -56,12 +56,14 @@ class Client(IClient):
                     log().warning(f'Received status code {response.status}')
                     return await self.post(document, retries + 1)
 
-                return await response.json(content_type=None)
+                response_json = await response.json(content_type=None)
+                return response_json
 
-            except (
-                aiohttp.client_exceptions.ClientConnectionError,
-                aiohttp.client_exceptions.ClientPayloadError,
-            ) as e:
+            # except (
+            #     aiohttp.client_exceptions.ClientConnectionError,
+            #     aiohttp.client_exceptions.ClientPayloadError,
+            # ) as e:
+            except Exception as e:
                 log().warning(f'Error posting to {self._url}: {e}')
 
         time.sleep(1 + (10 * retries))
