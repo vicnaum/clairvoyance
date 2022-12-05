@@ -34,6 +34,8 @@ class Client(IClient):
         """Post a GraphQL document to the server and return the response as JSON."""
 
         time.sleep(0.5)
+        time.sleep(10 * retries)
+        if (retries > 10): time.sleep(60*retries)
         
         if retries >= self._max_retries:
             log().warning(f'Reached max retries: {retries}')
@@ -64,7 +66,7 @@ class Client(IClient):
             #     aiohttp.client_exceptions.ClientPayloadError,
             # ) as e:
             except Exception as e:
-                log().warning(f'Error posting to {self._url}: {e}')
+                log().warning(f'Error posting to {self._url}: {e} - Retry {retries} of {self._max_retries}')
 
         time.sleep(1 + (10 * retries))
         if (retries > 10): time.sleep(60*retries)
