@@ -494,6 +494,7 @@ async def clairvoyance(
     input_document: str,
     input_schema: Dict[str, Any] = None,
 ) -> str:
+    log().debug(f'input_document = {input_document}')
     os.makedirs(f'backup', exist_ok=True)
     if not input_schema:
         if os.path.exists(f'backup/root_typenames_{input_document}.pickle'):
@@ -514,14 +515,19 @@ async def clairvoyance(
             subscription_type=root_typenames['subscriptionType'],
         )
     else:
+        log().debug(f'input_schema exists')
         schema = graphql.Schema(schema=input_schema)
 
+    log().debug(f'after input_schema exists')
+
     if os.path.exists(f'backup/typename_{input_document}.pickle'):
+        log().debug(f'os.path.exists')
         with open(f'backup/typename_{input_document}.pickle', 'rb') as f:
             serialized_typename = f.read()
             typename = pickle.loads(serialized_typename)
             log().debug(f'!!!!!!!!!!!!! READ TYPENAME FOR {input_document} !!!!!!!!!!!!!!')
     else:
+        log().debug(f'os.path does not exist')
         typename = await probe_typename(input_document)
         serialized_typename = pickle.dumps(typename)
         with open(f'backup/typename_{input_document}.pickle', 'wb') as f:

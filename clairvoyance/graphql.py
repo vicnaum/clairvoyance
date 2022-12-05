@@ -99,12 +99,19 @@ class Schema:
         ]
         roots = [r for r in roots if r]
 
+        log().debug(f'Before while')
+        # log().debug(f'name: {name}')
+        # log().debug(f'Roots: {roots}')
+        # log().debug(f'self.types.values(): {self.types.values()}')
+
         while name not in roots:
             for t in self.types.values():
                 for f in t.fields:
                     if f.type.name == name:
                         path_from_root.insert(0, f.name)
                         name = t.name
+
+        log().debug(f'After while')
 
         # Prepend queryType or mutationType
         path_from_root.insert(0, name)
@@ -133,8 +140,12 @@ class Schema:
         log().debug(f'Entered convert_path_to_document({path})')
         doc = 'FUZZ'
 
+        log().debug(f'Before while lenpath')
+        log().debug(f'Path: {path}')
+        log().debug(f'doc: {doc}')
         while len(path) > 1:
             doc = f'{path.pop()} {{ {doc} }}'
+        log().debug(f'After while lenpath')
 
         if path[0] == self._schema['queryType']['name']:
             doc = f'query {{ {doc} }}'

@@ -32,11 +32,12 @@ class Client(IClient):
         retries: int = 0,
     ) -> Dict:
         """Post a GraphQL document to the server and return the response as JSON."""
+        log().debug(f'Posting {document}, retries {retries} of {self._max_retries}')
 
         time.sleep(0.5)
         time.sleep(10 * retries)
         if (retries > 10): time.sleep(60*retries)
-        
+
         if retries >= self._max_retries:
             log().warning(f'Reached max retries: {retries}')
             return {}

@@ -64,6 +64,9 @@ async def blind_introspection(
     input_document = input_document or 'query { FUZZ }'
     ignored = set(e.value for e in GraphQLPrimitive)
     while True:
+        logger.info(f'Inside While True')
+        logger.info(f'input_document: {input_document}')
+        
         schema = await oracle.clairvoyance(
             wordlist,
             input_document=input_document,
@@ -80,10 +83,11 @@ async def blind_introspection(
         _next = s.get_type_without_fields(ignored)
         ignored.add(_next)
 
-        if _next:
-            input_document = s.convert_path_to_document(s.get_path_from_root(_next))
-        else:
-            break
+        if _next not in ["__TypeKind", "__Field","__EnumValue"]:
+            if _next:
+                input_document = s.convert_path_to_document(s.get_path_from_root(_next))
+            else:
+                break
 
     logger.info('Blind introspection complete.')
     await client().close()
